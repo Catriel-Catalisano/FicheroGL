@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fichaje QR</title>
+    <script src="https://unpkg.com/html5-qrcode" defer></script>
+    <style>
+        body { font-family: Arial, sans-serif; text-align: center; }
+        #qr-reader { width: 300px; margin: auto; }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        th, td { border: 1px solid black; padding: 8px; }
+    </style>
+</head>
+<body>
+    <h1>Fichaje de Ingresos</h1>
+    <div id="qr-reader"></div>
+    <p id="result"></p>
+    <h2>Registros</h2>
+    <table>
+        <thead>
+            <tr>
+                <th>Empleado</th>
+                <th>Hora</th>
+            </tr>
+        </thead>
+        <tbody id="log"></tbody>
+    </table>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            function logEntry(code) {
+                let now = new Date().toLocaleString();
+                let logTable = document.getElementById("log");
+                let row = logTable.insertRow(0);
+                row.insertCell(0).innerText = code;
+                row.insertCell(1).innerText = now;
+            }
+
+            function onScanSuccess(decodedText) {
+                document.getElementById("result").innerText = "Código detectado: " + decodedText;
+                logEntry(decodedText);
+            }
+
+            let html5QrCode = new Html5Qrcode("qr-reader");
+            html5QrCode.start({ facingMode: "environment" }, {
+                fps: 10,
+                qrbox: { width: 250, height: 250 }
+            }, onScanSuccess);
+        });
+    </script>
+</body>
+</html>
