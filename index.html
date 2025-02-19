@@ -1,21 +1,23 @@
-<!DOCTYPE html>
+<!DOCTYPE html>\>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Fichaje QR</title>
+    <title>Fichaje con Código QR</title>
     <script src="https://unpkg.com/html5-qrcode" defer></script>
     <style>
         body { font-family: Arial, sans-serif; text-align: center; }
         #qr-reader { width: 300px; margin: auto; }
         table { width: 100%; border-collapse: collapse; margin-top: 20px; }
         th, td { border: 1px solid black; padding: 8px; }
+        button { margin-top: 10px; padding: 10px; }
     </style>
 </head>
 <body>
-    <h1>Fichaje de Ingresos</h1>
+    <h1>Fichaje con Código QR</h1>
     <div id="qr-reader"></div>
-    <p id="result"></p>
+    <p id="result">Escanea un código QR</p>
+    <button onclick="exportarCSV()">Exportar a CSV</button>
     <h2>Registros</h2>
     <table>
         <thead>
@@ -35,6 +37,10 @@
                 let row = logTable.insertRow(0);
                 row.insertCell(0).innerText = code;
                 row.insertCell(1).innerText = now;
+                
+                let fichadas = JSON.parse(localStorage.getItem("fichadas")) || [];
+                fichadas.push({ empleado: code, hora: now });
+                localStorage.setItem("fichadas", JSON.stringify(fichadas));
             }
 
             function onScanSuccess(decodedText) {
@@ -48,6 +54,18 @@
                 qrbox: { width: 250, height: 250 }
             }, onScanSuccess);
         });
+
+        function exportarCSV() {
+            let fichadas = JSON.parse(localStorage.getItem("fichadas")) || [];
+            let csvContent = "data:text/csv;charset=utf-8,Empleado,Hora\n" +
+                fichadas.map(e => `${e.empleado},${e.hora}`).join("\n");
+            let encodedUri = encodeURI(csvContent);
+            let link = document.createElement("a");
+            link.setAttribute("href", encodedUri);
+            link.setAttribute("download", "fichadas.csv");
+            document.body.appendChild(link);
+            link.click();
+        }
     </script>
 </body>
 </html>
