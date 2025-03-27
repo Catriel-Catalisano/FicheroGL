@@ -1,71 +1,167 @@
-<!DOCTYPE html>\>
+<!DOCTYPE html>
 <html lang="es">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Fichaje con Código QR</title>
-    <script src="https://unpkg.com/html5-qrcode" defer></script>
-    <style>
-        body { font-family: Arial, sans-serif; text-align: center; }
-        #qr-reader { width: 300px; margin: auto; }
-        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-        th, td { border: 1px solid black; padding: 8px; }
-        button { margin-top: 10px; padding: 10px; }
-    </style>
+  <meta charset="UTF-8">
+  <title>GRUPO L - Fichaje de Ayudantes</title>
+  <script src="https://unpkg.com/html5-qrcode"></script>
+  <style>
+    body {
+      background: #0f2027;
+      background: linear-gradient(to right, #2c5364, #203a43, #0f2027);
+      color: #f0f0f0;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      padding: 20px;
+      text-align: center;
+    }
+
+    h1 {
+      font-size: 2em;
+      margin-bottom: 10px;
+      color: #00ffe7;
+    }
+
+    h2 {
+      font-weight: 400;
+      color: #ffffffcc;
+      margin-bottom: 30px;
+    }
+
+    #qr-reader {
+      width: 300px;
+      margin: auto;
+    }
+
+    table {
+      margin: 30px auto;
+      width: 80%;
+      border-collapse: collapse;
+      background: #ffffff11;
+      border: 1px solid #00ffe7;
+    }
+
+    th, td {
+      padding: 10px;
+      border: 1px solid #00ffe7;
+    }
+
+    th {
+      background-color: #00ffe733;
+      color: #00ffe7;
+    }
+
+    button {
+      margin: 10px 5px;
+      padding: 10px 20px;
+      background: #00ffe7;
+      border: none;
+      color: #000;
+      font-weight: bold;
+      cursor: pointer;
+      border-radius: 5px;
+      transition: 0.3s;
+    }
+
+    button:hover {
+      background: #00c9b7;
+    }
+  </style>
 </head>
 <body>
-    <h1>Fichaje Grupo L con Código QR</h1>
-    <div id="qr-reader"></div>
-    <p id="result">Escanea un código QR</p>
-    <button onclick="exportarCSV()">Exportar a CSV</button>
-    <h2>Registros</h2>
-    <table>
-        <thead>
-            <tr>
-                <th>Empleado</th>
-                <th>Hora</th>
-            </tr>
-        </thead>
-        <tbody id="log"></tbody>
-    </table>
+  <h1>GRUPO L</h1>
+  <h2>FICHAJE DE AYUDANTES</h2>
 
-    <script>
-        document.addEventListener("DOMContentLoaded", function() {
-            function logEntry(code) {
-                let now = new Date().toLocaleString();
-                let logTable = document.getElementById("log");
-                let row = logTable.insertRow(0);
-                row.insertCell(0).innerText = code;
-                row.insertCell(1).innerText = now;
-                
-                let fichadas = JSON.parse(localStorage.getItem("fichadas")) || [];
-                fichadas.push({ empleado: code, hora: now });
-                localStorage.setItem("fichadas", JSON.stringify(fichadas));
-            }
+  <div id="qr-reader"></div>
 
-            function onScanSuccess(decodedText) {
-                document.getElementById("result").innerText = "Código detectado: " + decodedText;
-                logEntry(decodedText);
-            }
+  <div>
+    <button onclick="exportarExcel()">Exportar a Excel</button>
+    <button onclick="borrarFichadas()">Borrar todo</button>
+  </div>
 
-            let html5QrCode = new Html5Qrcode("qr-reader");
-            html5QrCode.start({ facingMode: "environment" }, {
-                fps: 10,
-                qrbox: { width: 250, height: 250 }
-            }, onScanSuccess);
-        });
+  <table id="tablaFichadas">
+    <thead>
+      <tr>
+        <th>Ayudante</th>
+        <th>Fecha</th>
+        <th>Hora</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
 
-        function exportarCSV() {
-            let fichadas = JSON.parse(localStorage.getItem("fichadas")) || [];
-            let csvContent = "data:text/csv;charset=utf-8,Empleado,Hora\n" +
-                fichadas.map(e => `${e.empleado},${e.hora}`).join("\n");
-            let encodedUri = encodeURI(csvContent);
-            let link = document.createElement("a");
-            link.setAttribute("href", encodedUri);
-            link.setAttribute("download", "fichadas.csv");
-            document.body.appendChild(link);
-            link.click();
+  <script>
+    const tabla = document.querySelector("#tablaFichadas tbody");
+
+    function cargarFichadas() {
+      const datos = JSON.parse(localStorage.getItem("fichadas_qr")) || [];
+      datos.forEach(f => agregarFila(f.nombre, f.fecha, f.hora));
+    }
+
+    function registrarFichada(nombre) {
+      const ahora = new Date();
+      const fecha = ahora.toLocaleDateString();
+      const hora = ahora.toLocaleTimeString();
+
+      agregarFila(nombre, fecha, hora);
+
+      const datos = JSON.parse(localStorage.getItem("fichadas_qr")) || [];
+      datos.push({ nombre, fecha, hora });
+      localStorage.setItem("fichadas_qr", JSON.stringify(datos));
+    }
+
+    function agregarFila(nombre, fecha, hora) {
+      const fila = tabla.insertRow();
+      fila.insertCell(0).textContent = nombre;
+      fila.insertCell(1).textContent = fecha;
+      fila.insertCell(2).textContent = hora;
+    }
+
+    function borrarFichadas() {
+      if (confirm("¿Estás seguro de borrar todos los registros?")) {
+        localStorage.removeItem("fichadas_qr");
+        tabla.innerHTML = "";
+      }
+    }
+
+    function exportarExcel() {
+      let tablaHTML = document.getElementById("tablaFichadas").outerHTML;
+      let blob = new Blob(["\ufeff", tablaHTML], { type: "application/vnd.ms-excel" });
+      let url = URL.createObjectURL(blob);
+
+      let a = document.createElement("a");
+      a.href = url;
+      a.download = "fichadas_grupoL.xls";
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+    }
+
+    // Inicializar lector de QR
+    function iniciarQR() {
+      const qrScanner = new Html5Qrcode("qr-reader");
+
+      qrScanner.start(
+        { facingMode: "environment" },
+        {
+          fps: 10,
+          qrbox: 250
+        },
+        (decodedText, decodedResult) => {
+          qrScanner.stop().then(() => {
+            registrarFichada(decodedText);
+            alert("Fichada registrada para: " + decodedText);
+            setTimeout(iniciarQR, 1000);
+          });
+        },
+        (errorMessage) => {
+          // silencioso
         }
-    </script>
+      ).catch(err => {
+        console.error("Error al iniciar lector QR", err);
+      });
+    }
+
+    cargarFichadas();
+    iniciarQR();
+  </script>
 </body>
 </html>
